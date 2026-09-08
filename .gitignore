@@ -40,6 +40,8 @@ fpcmade*
 
 # Release files
 Release/
+dist/
+build/openssl/
 
 # transgui binary
 /transgui

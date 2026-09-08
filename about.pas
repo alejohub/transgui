@@ -125,14 +125,14 @@ end;
 procedure GoHomePage;
 begin
   AppBusy;
-  OpenURL('https://github.com/lighterowl/transgui/releases/latest');
+  OpenURL('https://github.com/alejohub/transgui/releases/latest');
   AppNormal;
 end;
 
 procedure GoGitHub;
 begin
   AppBusy;
-  OpenURL('https://github.com/lighterowl/transgui');
+  OpenURL('https://github.com/alejohub/transgui');
   AppNormal;
 end;
 
@@ -156,7 +156,7 @@ begin
 
   Application.ProcessMessages;
   AppBusy;
-  OpenURL('https://github.com/lighterowl/transgui/releases');
+  OpenURL('https://github.com/alejohub/transgui/releases');
   AppNormal;
 end;
 
@@ -195,7 +195,7 @@ begin
           FHttp.ProxyUser:=RpcObj.Http.ProxyUser;
           FHttp.ProxyPass:=RpcObj.Http.ProxyPass;
         end;
-        if FHttp.HTTPMethod('GET', 'https://api.github.com/repos/lighterowl/transgui/releases/latest') then begin
+        if FHttp.HTTPMethod('GET', 'https://api.github.com/repos/alejohub/transgui/releases/latest') then begin
           if FHttp.ResultCode = 200 then begin
             parsed := GetJSON(FHttp.Document) as TJSONObject;
             FVersion := Copy(parsed.Strings['name'], 2);

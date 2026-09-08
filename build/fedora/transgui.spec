@@ -6,7 +6,7 @@ Release:	0%{?dist}
 Summary:	Transmission BitTorrent client
 
 License:	GPLv2
-URL:		https://github.com/lighterowl/transgui
+URL:		https://github.com/alejohub/transgui
 Source0:	%{name}-%{version}.tar.gz
 BuildArch:	x86_64
 

@@ -1,4 +1,4 @@
-name: Windows Build
+name: Windows x64 Build
 
 on:
   push:
@@ -7,29 +7,34 @@ on:
     branches: [main, develop]
 
 jobs:
-  build-win:
+  build-windows-x64:
 
-    runs-on: windows-latest
+    runs-on: windows-2025
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v6
       with:
         submodules: recursive
 
-    - uses: actions/cache@v4
-      with:
-        path: |
-          ~\transgui_sdk\fpc-3.2.4-rc1
-          ~\transgui_sdk\lazarus
-          ~\transgui_sdk\OpenSSL\bin\libcrypto-3.dll
-          ~\transgui_sdk\OpenSSL\bin\libssl-3.dll
-        key: windows-fpc-lazarus-openssl
+    - name: Install Lazarus 4.8 and FPC 3.2.2
+      shell: pwsh
+      run: |
+        $installer = Join-Path $env:RUNNER_TEMP 'lazarus-4.8-fpc-3.2.2-win64.exe'
+        Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.8/lazarus-4.8-fpc-3.2.2-win64.exe/download' -OutFile $installer
+        $signature = Get-AuthenticodeSignature -FilePath $installer
+        if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Programming Free Pascal') {
+          throw "Unexpected Lazarus installer signature: $($signature.Status) / $($signature.SignerCertificate.Subject)"
+        }
+        Start-Process -FilePath $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/DIR=C:\tools\Lazarus-4.8' -Wait -NoNewWindow
 
-    - shell: pwsh
-      run: .github/build_windows.ps1
+    - name: Build and test Win64
+      shell: pwsh
+      env:
+        BUILD_COMMIT: ${{ github.sha }}
+      run: .\build-windows.ps1 -LazarusDir C:\tools\Lazarus-4.8
 
     - uses: actions/upload-artifact@v4
       with:
-        name: TransGUI Windows
-        path: Release\transgui.7z
+        name: TransGUI Windows x64
+        path: dist\windows-x64
         if-no-files-found: error

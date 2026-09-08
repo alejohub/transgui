@@ -1,6 +1,6 @@
 # Building transgui for Fedora 41+
 
-I have created an installation RPM package for [lighterowl's fork of transgui](https://github.com/lighterowl/transgui) in my [Fedora Copr repository](https://copr.fedorainfracloud.org/coprs/dlk/transgui/).  If all you want to do is to install transgui on Fedora 41, 42, or rawhide, you can do that using these commands:
+I have created an installation RPM package for [this maintained fork of transgui](https://github.com/alejohub/transgui) in my [Fedora Copr repository](https://copr.fedorainfracloud.org/coprs/dlk/transgui/).  If all you want to do is to install transgui on Fedora 41, 42, or rawhide, you can do that using these commands:
 
     sudo dnf copr enable dlk/transgui
     sudo dnf install transgui

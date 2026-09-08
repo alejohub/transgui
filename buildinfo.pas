@@ -36,7 +36,7 @@ unit BuildInfo;
 interface
 
 const
-  GIT_COMMIT = '@GIT_COMMIT@';
+  GIT_COMMIT = 'local';
 
 implementation
 
