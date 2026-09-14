@@ -12,39 +12,49 @@ uses
   ssl_openssl3;
 
 function AddWindowsTrustedRoots(SSL: TSSLOpenSSL3; out ErrorMessage: string): Boolean;
+function IsMissingOptionalSystemStoreError(ErrorCode: Cardinal): Boolean;
 
 implementation
 
 uses
-  Windows, SysUtils;
+  Windows, SysUtils, Crypt32;
 
 const
-  CertStoreProvSystem = 10;
-  CertSystemStoreCurrentUser = $00010000;
-  CertSystemStoreLocalMachine = $00020000;
   CertStoreOpenExistingFlag = $00004000;
-  CertStoreReadonlyFlag = $00008000;
-  CryptENotFound: DWORD = $80092004;
 
 type
-  PTransGuiCertContext = ^TTransGuiCertContext;
-  TTransGuiCertContext = packed record
-    dwCertEncodingType: DWORD;
-    pbCertEncoded: PByte;
-    cbCertEncoded: DWORD;
-    pCertInfo: Pointer;
-    hCertStore: THandle;
-  end;
   TCertificateList = array of AnsiString;
 
-function CertOpenStore(lpszStoreProvider: PAnsiChar; dwMsgAndCertEncodingType: DWORD;
-  hCryptProv: THandle; dwFlags: DWORD; pvPara: Pointer): THandle; stdcall;
-  external 'crypt32.dll' name 'CertOpenStore';
-function CertEnumCertificatesInStore(hCertStore: THandle;
-  pPrevCertContext: PTransGuiCertContext): PTransGuiCertContext; stdcall;
-  external 'crypt32.dll' name 'CertEnumCertificatesInStore';
-function CertCloseStore(hCertStore: THandle; dwFlags: DWORD): BOOL; stdcall;
-  external 'crypt32.dll' name 'CertCloseStore';
+function IsMissingOptionalSystemStoreError(ErrorCode: Cardinal): Boolean;
+begin
+  Result := (ErrorCode = ERROR_FILE_NOT_FOUND) or (ErrorCode = CRYPT_E_NOT_FOUND);
+end;
+
+function IsEndOfCertificateEnumeration(ErrorCode: DWORD): Boolean;
+begin
+  Result := (ErrorCode = ERROR_SUCCESS) or (ErrorCode = CRYPT_E_NOT_FOUND) or
+    (ErrorCode = ERROR_NO_MORE_FILES);
+end;
+
+function SystemStoreLocationName(Location: DWORD): string;
+begin
+  case Location of
+    CERT_SYSTEM_STORE_CURRENT_USER:
+      Result := 'CURRENT_USER';
+    CERT_SYSTEM_STORE_LOCAL_MACHINE:
+      Result := 'LOCAL_MACHINE';
+  else
+    Result := 'unknown location';
+  end;
+end;
+
+function SystemStoreErrorMessage(const ApiName: string;
+  const StoreName: UnicodeString; Location, ErrorCode: DWORD): string;
+begin
+  Result := Format('%s failed for Windows %s certificate store at %s (error %s): %s.',
+    [ApiName, String(StoreName), SystemStoreLocationName(Location),
+    IntToStr(Int64(ErrorCode)), SysErrorMessage(ErrorCode)]);
+end;
 
 function ContainsCertificate(const Certificates: TCertificateList;
   const Certificate: AnsiString): Boolean;
@@ -66,32 +76,44 @@ begin
   Certificates[High(Certificates)] := Certificate;
 end;
 
-function ReadSystemStore(const StoreName: AnsiString; Location: DWORD;
+function ReadSystemStore(const StoreName: UnicodeString; Location: DWORD;
   AllowMissing: Boolean; var Certificates: TCertificateList;
   out ErrorMessage: string): Boolean;
 var
-  Store: THandle;
-  Context: PTransGuiCertContext;
+  Store: HCERTSTORE;
+  Context: PCCERT_CONTEXT;
   Certificate: AnsiString;
+  ErrorCode: DWORD;
 begin
   Result := False;
-  Store := CertOpenStore(PAnsiChar(PtrUInt(CertStoreProvSystem)), 0, 0,
-    Location or CertStoreOpenExistingFlag or CertStoreReadonlyFlag,
-    PAnsiChar(StoreName));
+  { CERT_STORE_PROV_SYSTEM_W is the numeric LPCSTR provider 10; its pvPara
+    parameter is an LPCWSTR system-store name. }
+  Store := CertOpenStore(CERT_STORE_PROV_SYSTEM_W, 0, 0,
+    Location or CertStoreOpenExistingFlag or CERT_STORE_READONLY_FLAG,
+    Pointer(PWideChar(StoreName)));
   if Store = 0 then
   begin
-    if AllowMissing and (GetLastError = CryptENotFound) then
+    ErrorCode := GetLastError;
+    if AllowMissing and IsMissingOptionalSystemStoreError(ErrorCode) then
       Exit(True);
-    ErrorMessage := Format('Unable to open the Windows %s certificate store: %s.',
-      [String(StoreName), SysErrorMessage(GetLastError)]);
+    ErrorMessage := SystemStoreErrorMessage('CertOpenStore(CERT_STORE_PROV_SYSTEM_W)',
+      StoreName, Location, ErrorCode);
     Exit;
   end;
   try
     Context := nil;
     repeat
+      SetLastError(ERROR_SUCCESS);
       Context := CertEnumCertificatesInStore(Store, Context);
       if Context = nil then
-        Break;
+      begin
+        ErrorCode := GetLastError;
+        if IsEndOfCertificateEnumeration(ErrorCode) then
+          Break;
+        ErrorMessage := SystemStoreErrorMessage('CertEnumCertificatesInStore',
+          StoreName, Location, ErrorCode);
+        Exit;
+      end;
       SetString(Certificate, PAnsiChar(Context^.pbCertEncoded), Context^.cbCertEncoded);
       AddCertificate(Certificates, Certificate);
     until False;
@@ -112,16 +134,16 @@ begin
   SetLength(Roots, 0);
   SetLength(Disallowed, 0);
 
-  if not ReadSystemStore('Disallowed', CertSystemStoreCurrentUser, True,
+  if not ReadSystemStore('Disallowed', CERT_SYSTEM_STORE_CURRENT_USER, True,
     Disallowed, ErrorMessage) then
     Exit;
-  if not ReadSystemStore('Disallowed', CertSystemStoreLocalMachine, True,
+  if not ReadSystemStore('Disallowed', CERT_SYSTEM_STORE_LOCAL_MACHINE, True,
     Disallowed, ErrorMessage) then
     Exit;
-  if not ReadSystemStore('ROOT', CertSystemStoreCurrentUser, True, Roots,
+  if not ReadSystemStore('ROOT', CERT_SYSTEM_STORE_CURRENT_USER, False, Roots,
     ErrorMessage) then
     Exit;
-  if not ReadSystemStore('ROOT', CertSystemStoreLocalMachine, True, Roots,
+  if not ReadSystemStore('ROOT', CERT_SYSTEM_STORE_LOCAL_MACHINE, False, Roots,
     ErrorMessage) then
     Exit;
 

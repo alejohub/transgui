@@ -35,7 +35,7 @@ program transguitest;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, consoletestrunner, trackeruritest, tlspolicytest;
+  Classes, consoletestrunner, trackeruritest, tlspolicytest, windowscertstoretest;
 
 type
 

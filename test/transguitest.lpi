@@ -37,6 +37,10 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
+        <Filename Value="windowscertstoretest.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="../trackeruri.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="TrackerUri"/>
@@ -45,6 +49,11 @@
         <Filename Value="../tlspolicy.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="TlsPolicy"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../windowscertstore.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="WindowsCertStore"/>
       </Unit>
     </Units>
   </ProjectOptions>
