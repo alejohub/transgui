@@ -129,7 +129,7 @@ type
 
     constructor Create;
     destructor Destroy; override;
-    procedure InitSSL;
+    function InitSSL(out ErrorMessage: string): Boolean;
 
     procedure Lock;
     procedure Unlock;
@@ -156,7 +156,7 @@ var
 
 implementation
 
-uses Main, ssl_openssl3_lib, synafpc, blcksock;
+uses Main, ssl_openssl3_lib, synafpc, blcksock, TlsConfig, TlsPolicy;
 
 function TranslateTableToObjects(reply: TJSONObject) : TJSONObject;
 var
@@ -614,12 +614,13 @@ begin
   inherited Destroy;
 end;
 
-procedure TRpc.InitSSL;
+function TRpc.InitSSL(out ErrorMessage: string): Boolean;
 begin
-  if IsSSLloaded then exit;
-  if InitSSLInterface then
-    SSLImplementation := TSSLOpenSSL3;
+  Result := False;
+  if not InitializeTls(ErrorMessage) then
+    Exit;
   CreateHttp;
+  Result := ConfigureTls(Http.Sock.SSL, ErrorMessage);
 end;
 
 type TGzipDecompressionStream=class(TDecompressionStream)
@@ -712,7 +713,11 @@ begin
       if not r then begin
         if FMainThreadId <> GetCurrentThreadId then
           ReconnectAllowed:=True;
-        Status:=Http.Sock.LastErrorDesc;
+        if Url = 'https' then
+          Status:=TlsVerificationErrorMessage(Http.Sock.SSL.GetVerifyCert,
+            Http.Sock.LastErrorDesc)
+        else
+          Status:=Http.Sock.LastErrorDesc;
         break;
       end
       else begin
@@ -1059,4 +1064,3 @@ begin
 end;
 
 end.
-

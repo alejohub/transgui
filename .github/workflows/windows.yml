@@ -20,7 +20,13 @@ jobs:
       shell: pwsh
       run: |
         $installer = Join-Path $env:RUNNER_TEMP 'lazarus-4.8-fpc-3.2.2-win64.exe'
-        Invoke-WebRequest -Uri 'https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.8/lazarus-4.8-fpc-3.2.2-win64.exe/download' -OutFile $installer
+        & curl.exe --fail --location --retry 3 --output $installer 'https://fossies.org/windows/misc/lazarus-4.8-fpc-3.2.2-win64.exe'
+        if ($LASTEXITCODE -ne 0) {
+          throw "Could not download the Lazarus installer (curl exit code $LASTEXITCODE)."
+        }
+        if ((Get-FileHash -Algorithm SHA256 -Path $installer).Hash -ne 'ED25EE171D55E23CF14E0633159FDD2325EFBA56E186F8AB817AD3BF97D267D7') {
+          throw 'Unexpected Lazarus installer SHA-256.'
+        }
         $signature = Get-AuthenticodeSignature -FilePath $installer
         if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Programming Free Pascal') {
           throw "Unexpected Lazarus installer signature: $($signature.Status) / $($signature.SignerCertificate.Subject)"

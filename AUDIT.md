@@ -19,7 +19,7 @@ El proyecto es recuperable, pero la base no estaba lista para publicar nuevas ve
 1. **Alta — TLS:** la aplicación no activa verificación de certificados del servidor. Las credenciales RPC pueden quedar expuestas ante un atacante de red.
 2. **Alta — temporales:** usa nombres fijos en el directorio temporal para torrents y GeoIP, con riesgo de colisiones y enlaces simbólicos.
 3. **Alta — CI:** los jobs de macOS usan `macos-13`, y el pipeline depende de acciones, imágenes y descargas externas antiguas o no fijadas criptográficamente.
-4. **Alta — criptografía distribuida:** Windows descarga OpenSSL 3.1.8, rama fuera de soporte.
+4. **Resuelto — criptografía distribuida:** Windows descarga OpenSSL 3.5.8 LTS.
 5. **Alta — mantenimiento:** documentación, enlaces de releases y comprobador de actualizaciones apuntaban al repositorio archivado.
 6. **Media-alta — compatibilidad:** el cliente usa exclusivamente el protocolo RPC antiguo; Transmission 4.1 lo mantiene solo por compatibilidad y lo marca como obsoleto.
 7. **Media — calidad:** no hay pruebas de RPC, bencode, TLS, persistencia, descargas ni integración con Transmission.
@@ -31,7 +31,7 @@ El proyecto es recuperable, pero la base no estaba lista para publicar nuevas ve
 - La validación de contraseñas con `{}` muestra un error pero continúa guardando el valor.
 - El parser bencode no limita profundidad ni número de elementos.
 - El código de descargas comparte estado entre hilos sin sincronización explícita.
-- La versión del proyecto (`5.18.9.f`) no coincide con la declarada en el RPM (`5.18.8.f`).
+- La versión del proyecto (`5.18.9`) no coincide con la declarada en el RPM (`5.18.8.f`).
 
 ## Plan recomendado
 

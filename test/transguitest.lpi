@@ -33,9 +33,18 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
+        <Filename Value="tlspolicytest.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="../trackeruri.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="TrackerUri"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../tlspolicy.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TlsPolicy"/>
       </Unit>
     </Units>
   </ProjectOptions>
@@ -46,7 +55,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value=".."/>
+      <OtherUnitFiles Value="..;..\synapse\source\lib"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

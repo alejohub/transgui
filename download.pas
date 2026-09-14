@@ -92,7 +92,7 @@ function DownloadFile(const URL, DestFolder: string; const DestFileName: string 
 
 implementation
 
-uses Main, rpc;
+uses Main, rpc, TlsConfig, TlsPolicy;
 
 function DownloadFile(const URL, DestFolder: string; const DestFileName, DisplayName: string): boolean;
 var
@@ -148,30 +148,38 @@ var
 begin
   res:=1;
   try
-    FHttp:=THTTPSend.Create;
-    try
-      if RpcObj.Http.ProxyHost <> '' then begin
-        FHttp.ProxyHost:=RpcObj.Http.ProxyHost;
-        FHttp.ProxyPort:=RpcObj.Http.ProxyPort;
-        FHttp.ProxyUser:=RpcObj.Http.ProxyUser;
-        FHttp.ProxyPass:=RpcObj.Http.ProxyPass;
+    if not IsHttpsUrl(FUrl) or InitializeTls(FForm.FError) then begin
+      FHttp:=THTTPSend.Create;
+      try
+        if not IsHttpsUrl(FUrl) or ConfigureTls(FHttp.Sock.SSL, FForm.FError) then begin
+          if RpcObj.Http.ProxyHost <> '' then begin
+            FHttp.ProxyHost:=RpcObj.Http.ProxyHost;
+            FHttp.ProxyPort:=RpcObj.Http.ProxyPort;
+            FHttp.ProxyUser:=RpcObj.Http.ProxyUser;
+            FHttp.ProxyPass:=RpcObj.Http.ProxyPass;
+          end;
+          FHttp.Sock.OnMonitor:=@DoMonitor;
+          if FHttp.HTTPMethod('GET', FUrl) then begin
+            if FHttp.ResultCode = 200 then begin
+              FForm.FDownloaded:=FHttp.DownloadSize;
+              WriteToFile;
+              res:=2;
+            end
+            else
+              if not Terminated then
+                FForm.FError:=Format('HTTP error: %d', [FHttp.ResultCode]);
+          end
+          else
+            if not Terminated then
+              if IsHttpsUrl(FUrl) then
+                FForm.FError:=TlsVerificationErrorMessage(FHttp.Sock.SSL.GetVerifyCert,
+                  FHttp.Sock.LastErrorDesc)
+              else
+                FForm.FError:=FHttp.Sock.LastErrorDesc;
+        end;
+      finally
+        FHttp.Free;
       end;
-      FHttp.Sock.OnMonitor:=@DoMonitor;
-      if FHttp.HTTPMethod('GET', FUrl) then begin
-        if FHttp.ResultCode = 200 then begin
-          FForm.FDownloaded:=FHttp.DownloadSize;
-          WriteToFile;
-          res:=2;
-        end
-        else
-          if not Terminated then
-            FForm.FError:=Format('HTTP error: %d', [FHttp.ResultCode]);
-      end
-      else
-        if not Terminated then
-          FForm.FError:=FHttp.Sock.LastErrorDesc;
-    finally
-      FHttp.Free;
     end;
   except
     FForm.FError:=Exception(ExceptObject).Message;
@@ -255,4 +263,3 @@ initialization
   {$I download.lrs}
 
 end.
-

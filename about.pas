@@ -84,7 +84,7 @@ procedure GoGitHub;
 
 implementation
 
-uses Main, utils, httpsend;
+uses Main, utils, httpsend, TlsConfig, TlsPolicy;
 
 type
 
@@ -187,27 +187,32 @@ var
 begin
   if not FExit then begin
     try
-      FHttp:=THTTPSend.Create;
-      try
-        if RpcObj.Http.ProxyHost <> '' then begin
-          FHttp.ProxyHost:=RpcObj.Http.ProxyHost;
-          FHttp.ProxyPort:=RpcObj.Http.ProxyPort;
-          FHttp.ProxyUser:=RpcObj.Http.ProxyUser;
-          FHttp.ProxyPass:=RpcObj.Http.ProxyPass;
-        end;
-        if FHttp.HTTPMethod('GET', 'https://api.github.com/repos/alejohub/transgui/releases/latest') then begin
-          if FHttp.ResultCode = 200 then begin
-            parsed := GetJSON(FHttp.Document) as TJSONObject;
-            FVersion := Copy(parsed.Strings['name'], 2);
-            parsed.Free;
+      if InitializeTls(FError) then begin
+        FHttp:=THTTPSend.Create;
+        try
+          if ConfigureTls(FHttp.Sock.SSL, FError) then begin
+            if RpcObj.Http.ProxyHost <> '' then begin
+              FHttp.ProxyHost:=RpcObj.Http.ProxyHost;
+              FHttp.ProxyPort:=RpcObj.Http.ProxyPort;
+              FHttp.ProxyUser:=RpcObj.Http.ProxyUser;
+              FHttp.ProxyPass:=RpcObj.Http.ProxyPass;
+            end;
+            if FHttp.HTTPMethod('GET', 'https://api.github.com/repos/alejohub/transgui/releases/latest') then begin
+              if FHttp.ResultCode = 200 then begin
+                parsed := GetJSON(FHttp.Document) as TJSONObject;
+                FVersion := Copy(parsed.Strings['name'], 2);
+                parsed.Free;
+              end
+              else
+                FError:=Format('HTTP error: %d', [FHttp.ResultCode]);
+            end
+            else
+              FError:=TlsVerificationErrorMessage(FHttp.Sock.SSL.GetVerifyCert,
+                FHttp.Sock.LastErrorDesc);
           end
-          else
-            FError:=Format('HTTP error: %d', [FHttp.ResultCode]);
-        end
-        else
-          FError:=FHttp.Sock.LastErrorDesc;
-      finally
-        FHttp.Free;
+        finally
+          FHttp.Free;
+        end;
       end;
     except
       FError:=Exception(ExceptObject).Message;

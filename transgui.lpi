@@ -264,7 +264,8 @@
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="5"/>
       <MinorVersionNr Value="18"/>
-      <StringTable CompanyName="Transmission Remote GUI working group" FileDescription="Transmission Remote GUI" InternalName="transgui" LegalCopyright="Copyright (c) 2008-2019 by Yury Sidorov &amp; Transmission Remote GUI working group" OriginalFilename="transgui.exe" ProductName="Transmission Remote GUI" ProductVersion="5.18.9.f"/>
+      <RevisionNr Value="9"/>
+      <StringTable CompanyName="Transmission Remote GUI working group" FileDescription="Transmission Remote GUI" InternalName="transgui" LegalCopyright="Copyright (c) 2008-2019 by Yury Sidorov &amp; Transmission Remote GUI working group" OriginalFilename="transgui.exe" ProductName="Transmission Remote GUI" ProductVersion="5.18.9"/>
     </VersionInfo>
     <BuildModes>
       <Item Name="Debug" Default="True"/>
@@ -347,6 +348,21 @@
       <Unit>
         <Filename Value="rpc.pas"/>
         <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="tlsconfig.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TlsConfig"/>
+      </Unit>
+      <Unit>
+        <Filename Value="tlspolicy.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TlsPolicy"/>
+      </Unit>
+      <Unit>
+        <Filename Value="windowscertstore.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="WindowsCertStore"/>
       </Unit>
       <Unit>
         <Filename Value="addtorrent.pas"/>

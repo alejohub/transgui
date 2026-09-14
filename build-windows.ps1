@@ -44,10 +44,14 @@ function Set-BuildInfoCommit {
 
     $original = [System.IO.File]::ReadAllBytes($Path)
     $content = [System.Text.Encoding]::UTF8.GetString($original)
-    $updated = [regex]::Replace($content, "GIT_COMMIT\s*=\s*'[^']*';", "GIT_COMMIT = '$Commit';")
-    if ($updated -eq $content) {
+    $assignments = [regex]::Matches($content, "(?m)^\s*GIT_COMMIT\s*=\s*'[^']*';\s*$")
+    if ($assignments.Count -ne 1) {
         throw "Could not set GIT_COMMIT in $Path"
     }
+    $assignment = $assignments[0]
+    $updated = $content.Substring(0, $assignment.Index) +
+        "GIT_COMMIT = '$Commit';" +
+        $content.Substring($assignment.Index + $assignment.Length)
     [System.IO.File]::WriteAllText($Path, $updated, [System.Text.UTF8Encoding]::new($false))
     return ,$original
 }
@@ -109,7 +113,10 @@ public static class TransGuiOpenSslLoader {
             throw "Windows could not load libssl-3-x64.dll (error $([Runtime.InteropServices.Marshal]::GetLastWin32Error()))."
         }
         if ([TransGuiOpenSslLoader]::GetProcAddress($cryptoHandle, 'OpenSSL_version') -eq [IntPtr]::Zero -or
-            [TransGuiOpenSslLoader]::GetProcAddress($sslHandle, 'TLS_method') -eq [IntPtr]::Zero) {
+            [TransGuiOpenSslLoader]::GetProcAddress($cryptoHandle, 'X509_VERIFY_PARAM_set1_ip_asc') -eq [IntPtr]::Zero -or
+            [TransGuiOpenSslLoader]::GetProcAddress($sslHandle, 'TLS_method') -eq [IntPtr]::Zero -or
+            [TransGuiOpenSslLoader]::GetProcAddress($sslHandle, 'SSL_set1_host') -eq [IntPtr]::Zero -or
+            [TransGuiOpenSslLoader]::GetProcAddress($sslHandle, 'SSL_get0_param') -eq [IntPtr]::Zero) {
             throw 'The OpenSSL runtime is missing symbols required by Synapse ssl_openssl3.'
         }
     }
